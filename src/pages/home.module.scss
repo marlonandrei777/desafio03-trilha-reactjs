@@ -1,1 +1,50 @@
-// TODO
+.container {
+  a {
+    display: block;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ff57b2;
+
+    margin-top: 4rem;
+  }
+}
+
+.mainContent {
+  max-width: 720px;
+  margin-top: 4.051rem;
+
+  strong {
+    font-size: 1.75rem;
+    font-weight: 700;
+  }
+
+  p {
+    font-size: 1.125rem;
+    color: var(--body);
+    margin-top: 9px;
+  }
+
+  & + main {
+    // todo Link q vem a pós outro link (alterar main p link)
+    margin-top: 50px;
+  }
+}
+
+.infoContainer {
+  display: flex;
+  margin-top: 23px;
+
+  div {
+    display: flex;
+    align-items: center;
+    color: var(--info);
+
+    small {
+      margin-left: 8px;
+    }
+
+    & + div {
+      margin-left: 24px;
+    }
+  }
+}
