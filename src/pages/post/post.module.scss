@@ -1,1 +1,53 @@
-// TODO
+.banner {
+  img {
+    height: 25rem;
+    width: 100%;
+    background-size: cover;
+    background-position: center;
+  }
+}
+
+.mainContainer {
+  margin-top: 80px;
+
+  h1 {
+    font-size: 3rem;
+    font-weight: 700;
+  }
+
+  article {
+    margin: 4rem 0;
+
+    h2 {
+      font-size: 2rem;
+    }
+
+    div {
+      margin-top: 2rem;
+      line-height: 1.75rem;
+      text-align: justify;
+
+      p ~ p {
+        margin-top: 1rem;
+      }
+
+      ul {
+        margin: 1.5rem 0;
+
+        li + li {
+          margin-top: 0.5rem;
+        }
+      }
+
+      a {
+        color: var(--highlight);
+        text-decoration: underline transparent;
+        transition: 0.2s;
+
+        &:hover {
+          text-decoration: underline var(--highlight);
+        }
+      }
+    }
+  }
+}

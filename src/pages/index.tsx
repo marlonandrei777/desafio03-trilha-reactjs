@@ -1,8 +1,16 @@
 import { GetStaticProps } from 'next';
-
-import { FiCalendar, FiUser } from 'react-icons/fi';
 import Link from 'next/link';
 import Head from 'next/head';
+
+import { useState } from 'react';
+
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
+import { FiCalendar, FiUser } from 'react-icons/fi';
+
+import Prismic from '@prismicio/client';
+import ApiSearchResponse from '@prismicio/client/types/ApiSearchResponse';
+
 import { getPrismicClient } from '../services/prismic';
 
 import commonStyles from '../styles/common.module.scss';
@@ -27,7 +35,19 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-export default function Home() {
+export default function Home({ postsPagination }: HomeProps) {
+  const [posts, setPosts] = useState<Post[]>(postsPagination.results);
+  const [hasMorePosts, setHasMorePosts] = useState(!!postsPagination.next_page);
+
+  async function handleLoadMorePosts(): Promise<void> {
+    const loadMorePostsResponse: ApiSearchResponse = await (
+      await fetch(postsPagination.next_page)
+    ).json();
+
+    setPosts(oldPosts => [...oldPosts, ...loadMorePostsResponse.results]);
+    setHasMorePosts(!!loadMorePostsResponse.next_page);
+  }
+
   return (
     <>
       <Head>
@@ -36,35 +56,59 @@ export default function Home() {
 
       <div className={`${styles.container} ${commonStyles.container}`}>
         <img src="/logo.svg" alt="logo" />
+        {posts.map(post => (
+          <main className={styles.mainContent}>
+            <Link href={`/post/${post.uid}`}>
+              <a key={post.uid}>
+                <strong>{post.data.title}</strong>
+                <p>{post.data.subtitle}</p>
 
-        <main className={styles.mainContent}>
-          {/* <Link href={#}>
-          <a key={}> */}
-          <strong>Como utilizar Hooks</strong>
-          <p>Pensando em sincronização em vez de ciclos</p>
-          <div className={styles.infoContainer}>
-            <div>
-              <FiCalendar />
-              <small>28/05/2021</small>
-            </div>
-            <div>
-              <FiUser />
-              <small>Marlon Andrei</small>
-            </div>
-          </div>
-          {/*  </a>
-        </Link> */}
-        </main>
+                <div className={commonStyles.infoContainer}>
+                  <div>
+                    <FiCalendar />
+                    <small>
+                      {format(
+                        new Date(post.first_publication_date),
+                        'dd MMM yyyy',
+                        {
+                          locale: ptBR,
+                        }
+                      )}
+                    </small>
+                  </div>
+                  <div>
+                    <FiUser />
+                    <small>{post.data.author}</small>
+                  </div>
+                </div>
+              </a>
+            </Link>
+          </main>
+        ))}
 
-        <a href="#">Carregar mais posts</a>
+        {hasMorePosts && (
+          <button type="button" onClick={handleLoadMorePosts}>
+            Carregar mais posts
+          </button>
+        )}
       </div>
     </>
   );
 }
 
-// export const getStaticProps = async () => {
-//   // const prismic = getPrismicClient();
-//   // const postsResponse = await prismic.query(TODO);
+export const getStaticProps: GetStaticProps = async () => {
+  const prismic = getPrismicClient();
 
-//   // TODO
-// };
+  const postsResponse = await prismic.query(
+    Prismic.Predicates.at('document.type', 'posts'),
+    {
+      pageSize: 1,
+    }
+  );
+
+  return {
+    props: {
+      postsPagination: postsResponse,
+    },
+  };
+};
