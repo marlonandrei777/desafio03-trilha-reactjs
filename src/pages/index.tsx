@@ -35,7 +35,7 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-export default function Home({ postsPagination }: HomeProps) {
+export default function Home({ postsPagination }: HomeProps): JSX.Element {
   const [posts, setPosts] = useState<Post[]>(postsPagination.results);
   const [hasMorePosts, setHasMorePosts] = useState(!!postsPagination.next_page);
 
@@ -56,10 +56,11 @@ export default function Home({ postsPagination }: HomeProps) {
 
       <div className={`${styles.container} ${commonStyles.container}`}>
         <img src="/logo.svg" alt="logo" />
-        {posts.map(post => (
-          <main className={styles.mainContent}>
-            <Link href={`/post/${post.uid}`}>
-              <a key={post.uid}>
+
+        <main className={styles.mainContent}>
+          {posts.map(post => (
+            <Link href={`/post/${post.uid}`} key={post.uid}>
+              <a className={styles.post}>
                 <strong>{post.data.title}</strong>
                 <p>{post.data.subtitle}</p>
 
@@ -83,8 +84,8 @@ export default function Home({ postsPagination }: HomeProps) {
                 </div>
               </a>
             </Link>
-          </main>
-        ))}
+          ))}
+        </main>
 
         {hasMorePosts && (
           <button type="button" onClick={handleLoadMorePosts}>

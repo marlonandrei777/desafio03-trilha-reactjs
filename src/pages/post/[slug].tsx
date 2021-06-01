@@ -1,5 +1,11 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
+import Prismic from '@prismicio/client';
+import PrismicDOM from 'prismic-dom';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
+import { Fragment, useMemo } from 'react';
+import { useRouter } from 'next/router';
 import Header from '../../components/Header';
 
 import { getPrismicClient } from '../../services/prismic';
@@ -28,9 +34,45 @@ interface PostProps {
   post: Post;
 }
 
-export default function Post() {
+export default function Post({ post }: PostProps): JSX.Element {
+  const router = useRouter();
+
+  const estimatedReadTime = useMemo(() => {
+    if (router.isFallback) {
+      return 0;
+    }
+
+    const wordsPerMinute = 200;
+
+    const contentWords = post.data.content.reduce(
+      (summedContents, currentContent) => {
+        const headingWords = currentContent.heading.split(/\s/g).length;
+        const bodyWords = currentContent.body.reduce(
+          (summedBodies, currentBody) => {
+            const textWords = currentBody.text.split(/\s/g).length;
+
+            return summedBodies + textWords;
+          },
+          0
+        );
+
+        return summedContents + headingWords + bodyWords;
+      },
+      0
+    );
+
+    const minutes = contentWords / wordsPerMinute;
+    const readTime = Math.ceil(minutes);
+
+    return readTime;
+  }, [post, router.isFallback]);
+
+  if (router.isFallback) {
+    return <p>Carregando...</p>;
+  }
+
   return (
-    <div>
+    <>
       <Header />
 
       <div className={styles.banner}>
@@ -38,73 +80,71 @@ export default function Post() {
       </div>
 
       <main className={`${styles.mainContainer}  ${commonStyles.container}`}>
-        <h1>Criando um app TESTE teste</h1>
+        <h1>{post.data.title}</h1>
 
         <div className={commonStyles.infoContainer}>
           <div>
             <FiCalendar />
             <small>
-              31 mai 2021
-              {/* {format(new Date(post.first_publication_date), 'dd MMM yyyy', {
+              {format(new Date(post.first_publication_date), 'dd MMM yyyy', {
                 locale: ptBR,
-              })} */}
+              })}
             </small>
           </div>
           <div>
             <FiUser />
-            <small>Marlon</small>
+            <small>{post.data.author}</small>
           </div>
           <div>
             <FiClock />
-            <small>4 min</small>
+            <small>{estimatedReadTime} min</small>
           </div>
         </div>
 
         <article>
-          <h2>Teste 2</h2>
+          {post.data.content.map(({ heading, body }) => (
+            <Fragment key={heading}>
+              <h2>{heading}</h2>
 
-          <div>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Pharetra
-            diam sit amet nisl suscipit adipiscing bibendum est ultricies. Est
-            lorem ipsum dolor sit amet consectetur. Sit amet nulla facilisi
-            morbi tempus iaculis urna id. Eget nullam non nisi est sit. Risus
-            sed vulputate odio ut enim blandit volutpat. Velit sed ullamcorper
-            morbi tincidunt ornare. Aliquet eget sit amet tellus cras. Imperdiet
-            sed euismod nisi porta. Nulla porttitor massa id neque. Praesent
-            tristique magna sit amet purus gravida quis blandit turpis. Egestas
-            purus viverra accumsan in nisl nisi scelerisque. Pulvinar neque
-            laoreet suspendisse interdum consectetur libero id faucibus. Integer
-            malesuada nunc vel risus commodo viverra maecenas accumsan lacus.
-            Nunc sed id semper risus in hendrerit gravida rutrum quisque.
-            Malesuada fames ac turpis egestas integer eget aliquet. Mi proin sed
-            libero enim sed faucibus turpis. Nisl suscipit adipiscing bibendum
-            est ultricies integer quis. Placerat in egestas erat imperdiet sed
-            euismod. Mauris cursus mattis molestie a iaculis at erat
-            pellentesque adipiscing. Eu sem integer vitae justo. Amet porttitor
-            eget dolor morbi. Consectetur libero id faucibus nisl tincidunt eget
-            nullam. Commodo elit at imperdiet dui accumsan sit amet nulla.
-            Tortor posuere ac ut consequat semper viverra nam. Tortor
-            condimentum lacinia quis vel. Morbi tempus iaculis urna id volutpat
-            lacus. Eu augue ut lectus arcu bibendum at varius vel. Sed sed risus
-            pretium quam. Scelerisque felis imperdiet proin fermentum. Venenatis
-          </div>
+              <div
+                // eslint-disable-next-line react/no-danger
+                dangerouslySetInnerHTML={{
+                  __html: PrismicDOM.RichText.asHtml(body),
+                }}
+              />
+            </Fragment>
+          ))}
         </article>
       </main>
-    </div>
+    </>
   );
 }
 
-// export const getStaticPaths = async () => {
-//   const prismic = getPrismicClient();
-//   const posts = await prismic.query(TODO);
+export const getStaticPaths: GetStaticPaths = async () => {
+  const prismic = getPrismicClient();
+  const posts = await prismic.query([
+    Prismic.Predicates.at('document.type', 'posts'),
+  ]);
 
-//   // TODO
-// };
+  const paths = posts.results.map(post => ({
+    params: { slug: post.uid },
+  }));
 
-// export const getStaticProps = async context => {
-//   const prismic = getPrismicClient();
-//   const response = await prismic.getByUID(TODO);
+  return {
+    paths,
+    fallback: true,
+  };
+};
 
-//   // TODO
-// };
+export const getStaticProps: GetStaticProps<PostProps> = async context => {
+  const prismic = getPrismicClient();
+  const { slug } = context.params;
+
+  const response = await prismic.getByUID('posts', String(slug), {});
+
+  return {
+    props: {
+      post: response,
+    },
+  };
+};
