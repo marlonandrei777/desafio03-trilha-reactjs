@@ -16,6 +16,14 @@
     font-weight: 700;
   }
 
+  > span {
+    display: block;
+    margin-top: 1rem;
+    font-style: italic;
+    font-size: 0.875rem;
+    color: var(--info);
+  }
+
   article {
     margin: 4rem 0;
 
@@ -53,6 +61,33 @@
           text-decoration: underline #ff57b2;
         }
       }
+    }
+  }
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #282c34;
+  margin-bottom: 80px;
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 400;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+  }
+
+  a {
+    color: #ff57b2;
+    font-weight: 600;
+  }
+
+  div {
+    padding-top: 3rem;
+
+    & + div {
+      text-align: right;
     }
   }
 }
